@@ -1,0 +1,413 @@
+bash
+cat << 'EOF' > /home/claude/production_plan_cn.py
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+
+wb = Workbook()
+
+DARK_BLUE   = "1F3864"
+MID_BLUE    = "2E75B6"
+LIGHT_BLUE  = "D6E4F0"
+ORANGE      = "F4B942"
+LIGHT_ORANGE= "FFF3CD"
+GREEN       = "70AD47"
+LIGHT_GREEN = "E2EFDA"
+WHITE       = "FFFFFF"
+GRAY        = "F2F2F2"
+DARK_GRAY   = "595959"
+
+def fill(hex_color):
+    return PatternFill("solid", fgColor=hex_color)
+
+def border(style="thin"):
+    s = Side(style=style, color="BFBFBF")
+    return Border(left=s, right=s, top=s, bottom=s)
+
+def thick_border():
+    t = Side(style="medium", color="1F3864")
+    return Border(left=t, right=t, top=t, bottom=t)
+
+def center(wrap=False):
+    return Alignment(horizontal="center", vertical="center", wrap_text=wrap)
+
+def left(wrap=False):
+    return Alignment(horizontal="left", vertical="center", wrap_text=wrap)
+
+# ══════════════════════════════════════════════
+# Sheet 1: 生产计划单
+# ══════════════════════════════════════════════
+ws = wb.active
+ws.title = "生产计划单"
+
+# 标题
+ws.merge_cells("A1:P1")
+ws["A1"] = "🥿  拖鞋生产计划单"
+ws["A1"].font = Font(name="微软雅黑", bold=True, size=16, color=WHITE)
+ws["A1"].fill = fill(DARK_BLUE)
+ws["A1"].alignment = center()
+ws.row_dimensions[1].height = 38
+
+ws.merge_cells("A2:P2")
+ws["A2"] = "PT. [公司名称]  — 拖鞋制造厂"
+ws["A2"].font = Font(name="微软雅黑", size=10, color="C0C0C0")
+ws["A2"].fill = fill(DARK_BLUE)
+ws["A2"].alignment = center()
+ws.row_dimensions[2].height = 22
+
+# 基本信息行
+ws.row_dimensions[3].height = 22
+info_labels = ["A3","D3","G3","J3","M3"]
+info_values = ["B3","E3","H3","K3","N3"]
+info_merges = ["B3:C3","E3:F3","H3:I3","K3:L3","N3:P3"]
+info_txts   = ["计划单号：","制单日期：","工厂名称：","生产负责人：","审批人："]
+
+for lbl, val, mrg, txt in zip(info_labels, info_values, info_merges, info_txts):
+    ws[lbl].value = txt
+    ws[lbl].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+    ws[lbl].fill = fill(MID_BLUE)
+    ws[lbl].alignment = left()
+    ws[lbl].border = border()
+    ws.merge_cells(mrg)
+    ws[val].fill = fill(LIGHT_BLUE)
+    ws[val].border = border()
+    ws[val].alignment = center()
+
+ws.row_dimensions[4].height = 8  # 间隔
+
+# ── 订单信息 ──────────────────────────────────
+ws.merge_cells("A5:P5")
+ws["A5"] = "▌ 一、订单基本信息"
+ws["A5"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+ws["A5"].fill = fill(MID_BLUE)
+ws["A5"].alignment = left()
+ws.row_dimensions[5].height = 22
+
+row6_labels = [("A6","客户名称："),("D6","款号/型号："),("G6","颜色："),("J6","鞋面材质："),("M6","鞋底材质：")]
+row6_merges = [("B6","B6:C6"),("E6","E6:F6"),("H6","H6:I6"),("K6","K6:L6"),("N6","N6:P6")]
+
+for (lbl, txt), (val, mrg) in zip(row6_labels, row6_merges):
+    ws[lbl].value = txt
+    ws[lbl].font = Font(name="微软雅黑", bold=True, size=9, color=DARK_GRAY)
+    ws[lbl].fill = fill(GRAY); ws[lbl].alignment = left(); ws[lbl].border = border()
+    ws.merge_cells(mrg)
+    ws[val].fill = fill(WHITE); ws[val].border = border(); ws[val].alignment = center()
+ws.row_dimensions[6].height = 22
+
+row7_labels = [("A7","订单号："),("D7","尺码范围："),("G7","交货日期："),("J7","生产周期："),("M7","订单数量：")]
+row7_merges = [("B7","B7:C7"),("E7","E7:F7"),("H7","H7:I7"),("K7","K7:L7"),("N7","N7:P7")]
+
+for (lbl, txt), (val, mrg) in zip(row7_labels, row7_merges):
+    ws[lbl].value = txt
+    ws[lbl].font = Font(name="微软雅黑", bold=True, size=9, color=DARK_GRAY)
+    ws[lbl].fill = fill(GRAY); ws[lbl].alignment = left(); ws[lbl].border = border()
+    ws.merge_cells(mrg)
+    ws[val].fill = fill(WHITE); ws[val].border = border(); ws[val].alignment = center()
+ws.row_dimensions[7].height = 22
+ws.row_dimensions[8].height = 8
+
+# ── 尺码数量 ──────────────────────────────────
+ws.merge_cells("A9:P9")
+ws["A9"] = "▌ 二、尺码生产数量"
+ws["A9"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+ws["A9"].fill = fill(MID_BLUE); ws["A9"].alignment = left()
+ws.row_dimensions[9].height = 22
+
+sizes = ["35","36","37","38","39","40","41","42","43","44","45","46"]
+size_cols = list("BCDEFGHIJKLM")
+
+ws["A10"].value = "颜色"
+ws["A10"].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+ws["A10"].fill = fill(DARK_BLUE); ws["A10"].alignment = center(); ws["A10"].border = border()
+
+for sz, col in zip(sizes, size_cols):
+    c = ws[f"{col}10"]
+    c.value = sz
+    c.font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+    c.fill = fill(MID_BLUE); c.alignment = center(); c.border = border()
+
+for col, lbl in [("N10","小计"),("O10","备注")]:
+    ws[col].value = lbl
+    ws[col].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+    ws[col].fill = fill(DARK_BLUE); ws[col].alignment = center(); ws[col].border = border()
+ws.merge_cells("O10:P10")
+ws.row_dimensions[10].height = 22
+
+colors_cn = ["黑色","白色","棕色","蓝色","红色","灰色","驼色","粉色"]
+for r, clr in enumerate(colors_cn, start=11):
+    rf = fill(WHITE) if r % 2 == 0 else fill(LIGHT_BLUE)
+    ws[f"A{r}"].value = clr
+    ws[f"A{r}"].font = Font(name="微软雅黑", size=9, bold=True)
+    ws[f"A{r}"].fill = rf; ws[f"A{r}"].alignment = center(); ws[f"A{r}"].border = border()
+    for col in size_cols:
+        ws[f"{col}{r}"].fill = rf; ws[f"{col}{r}"].border = border()
+        ws[f"{col}{r}"].alignment = center()
+    ws[f"N{r}"] = f"=SUM(B{r}:M{r})"
+    ws[f"N{r}"].font = Font(name="微软雅黑", bold=True, size=9)
+    ws[f"N{r}"].fill = fill(LIGHT_ORANGE); ws[f"N{r}"].border = border(); ws[f"N{r}"].alignment = center()
+    ws.merge_cells(f"O{r}:P{r}")
+    ws[f"O{r}"].fill = fill(WHITE); ws[f"O{r}"].border = border()
+    ws.row_dimensions[r].height = 20
+
+tot = 19
+ws[f"A{tot}"].value = "合  计"
+ws[f"A{tot}"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+ws[f"A{tot}"].fill = fill(DARK_BLUE); ws[f"A{tot}"].alignment = center(); ws[f"A{tot}"].border = thick_border()
+for col in size_cols:
+    ws[f"{col}{tot}"] = f"=SUM({col}11:{col}18)"
+    ws[f"{col}{tot}"].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+    ws[f"{col}{tot}"].fill = fill(MID_BLUE); ws[f"{col}{tot}"].alignment = center(); ws[f"{col}{tot}"].border = thick_border()
+ws[f"N{tot}"] = f"=SUM(N11:N18)"
+ws[f"N{tot}"].font = Font(name="微软雅黑", bold=True, size=11, color=WHITE)
+ws[f"N{tot}"].fill = fill(ORANGE); ws[f"N{tot}"].border = thick_border(); ws[f"N{tot}"].alignment = center()
+ws.row_dimensions[tot].height = 26
+ws.row_dimensions[20].height = 8
+
+# ── 生产工序进度 ──────────────────────────────
+ws.merge_cells("A21:P21")
+ws["A21"] = "▌ 三、生产工序进度计划"
+ws["A21"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+ws["A21"].fill = fill(MID_BLUE); ws["A21"].alignment = left()
+ws.row_dimensions[21].height = 22
+
+proc_hdrs = ["工序名称","负责班组","计划开始","计划完成","实际开始","实际完成","计划数量","完成数量","完成率"]
+proc_col_map = ["A","B","C","D","E","F","G","H","I"]
+for i, (hd, col) in enumerate(zip(proc_hdrs, proc_col_map)):
+    ws[f"{col}22"].value = hd
+    ws[f"{col}22"].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+    ws[f"{col}22"].fill = fill(DARK_BLUE if i%2==0 else "1A5276")
+    ws[f"{col}22"].alignment = center(wrap=True); ws[f"{col}22"].border = border()
+ws.merge_cells("J22:P22")
+ws["J22"].value = "备注"
+ws["J22"].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+ws["J22"].fill = fill(DARK_BLUE); ws["J22"].alignment = center(); ws["J22"].border = border()
+ws.row_dimensions[22].height = 26
+
+procs = ["1. 裁剪","2. 缝合/车帮","3. 成型定型","4. 贴底粘合","5. 打磨修边","6. 品质检验","7. 包装入库"]
+for r, proc in enumerate(procs, start=23):
+    rf = fill(WHITE) if r%2==0 else fill(LIGHT_GREEN)
+    ws[f"A{r}"].value = proc
+    ws[f"A{r}"].font = Font(name="微软雅黑", size=9, bold=True)
+    ws[f"A{r}"].fill = rf; ws[f"A{r}"].alignment = left(); ws[f"A{r}"].border = border()
+    for col in ["B","C","D","E","F","G","H"]:
+        ws[f"{col}{r}"].fill = rf; ws[f"{col}{r}"].border = border(); ws[f"{col}{r}"].alignment = center()
+    ws[f"I{r}"] = f'=IF(G{r}=0,"",H{r}/G{r})'
+    ws[f"I{r}"].number_format = "0.0%"
+    ws[f"I{r}"].fill = fill(LIGHT_ORANGE); ws[f"I{r}"].border = border(); ws[f"I{r}"].alignment = center()
+    ws.merge_cells(f"J{r}:P{r}")
+    ws[f"J{r}"].fill = rf; ws[f"J{r}"].border = border()
+    ws.row_dimensions[r].height = 22
+ws.row_dimensions[30].height = 8
+
+# ── 物料需求 ──────────────────────────────────
+ws.merge_cells("A31:P31")
+ws["A31"] = "▌ 四、主要物料需求"
+ws["A31"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+ws["A31"].fill = fill(MID_BLUE); ws["A31"].alignment = left()
+ws.row_dimensions[31].height = 22
+
+mat_h_data = [("A32:C32","物料名称"),("D32:E32","规格"),("F32","单位"),
+              ("G32","需求量"),("H32","库存量"),("I32","采购量"),
+              ("J32:K32","预计到料"),("L32:M32","供应商"),("N32","状态"),("O32:P32","备注")]
+for mrg, txt in mat_h_data:
+    ws.merge_cells(mrg)
+    c = mrg.split(":")[0]
+    ws[c].value = txt
+    ws[c].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+    ws[c].fill = fill(DARK_BLUE); ws[c].alignment = center(wrap=True); ws[c].border = border()
+ws.row_dimensions[32].height = 26
+
+mats = ["EVA鞋底","橡胶大底","鞋面面料","EVA内垫","海绵内衬","魔术贴","包装袋","纸箱"]
+for r, mat in enumerate(mats, start=33):
+    rf = fill(WHITE) if r%2==0 else fill(GRAY)
+    ws.merge_cells(f"A{r}:C{r}"); ws[f"A{r}"].value = mat
+    ws[f"A{r}"].font = Font(name="微软雅黑", size=9)
+    ws[f"A{r}"].fill = rf; ws[f"A{r}"].alignment = left(); ws[f"A{r}"].border = border()
+    for cs,ce in [("D","E"),("J","K"),("L","M"),("O","P")]:
+        ws.merge_cells(f"{cs}{r}:{ce}{r}")
+    for col in ["D","F","G","H","J","L","N","O"]:
+        ws[f"{col}{r}"].fill = rf; ws[f"{col}{r}"].border = border(); ws[f"{col}{r}"].alignment = center()
+    ws[f"I{r}"] = f"=MAX(0,G{r}-H{r})"
+    ws[f"I{r}"].fill = fill(LIGHT_ORANGE); ws[f"I{r}"].border = border(); ws[f"I{r}"].alignment = center()
+    ws.row_dimensions[r].height = 20
+ws.row_dimensions[41].height = 8
+
+# ── 品质要求 ──────────────────────────────────
+ws.merge_cells("A42:P42")
+ws["A42"] = "▌ 五、品质控制要求"
+ws["A42"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+ws["A42"].fill = fill(MID_BLUE); ws["A42"].alignment = left()
+ws.row_dimensions[42].height = 22
+
+qc_items = [("外观要求","A43:C43","A44:C44"),("尺寸公差","D43:F43","D44:F44"),
+            ("粘合强度","G43:I43","G44:I44"),("防滑测试","J43:L43","J44:L44"),
+            ("耐磨要求","M43:N43","M44:N44"),("包装要求","O43:P43","O44:P44")]
+for lbl, hdr_mrg, val_mrg in qc_items:
+    ws.merge_cells(hdr_mrg); ws.merge_cells(val_mrg)
+    hc = hdr_mrg.split(":")[0]; vc = val_mrg.split(":")[0]
+    ws[hc].value = lbl
+    ws[hc].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+    ws[hc].fill = fill(DARK_BLUE); ws[hc].alignment = center(); ws[hc].border = border()
+    ws[vc].fill = fill(WHITE); ws[vc].border = border(); ws[vc].alignment = center()
+ws.row_dimensions[43].height = 22; ws.row_dimensions[44].height = 32
+ws.row_dimensions[45].height = 8
+
+# ── 签核 ──────────────────────────────────────
+ws.merge_cells("A46:P46")
+ws["A46"] = "▌ 六、审批签核"
+ws["A46"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+ws["A46"].fill = fill(MID_BLUE); ws["A46"].alignment = left()
+ws.row_dimensions[46].height = 22
+
+sig_data = [("A","D","制单人"),("E","H","生产主管"),("I","L","品质主管"),("M","P","厂长/总经理")]
+for cs, ce, role in sig_data:
+    ws.merge_cells(f"{cs}47:{ce}47")
+    ws[f"{cs}47"].value = role
+    ws[f"{cs}47"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+    ws[f"{cs}47"].fill = fill(DARK_BLUE); ws[f"{cs}47"].alignment = center(); ws[f"{cs}47"].border = thick_border()
+    ws.merge_cells(f"{cs}48:{ce}49")
+    ws[f"{cs}48"].fill = fill(WHITE); ws[f"{cs}48"].border = thick_border()
+for r in [47,48,49]:
+    ws.row_dimensions[r].height = 30
+
+# 列宽
+col_widths = {"A":14,"B":7,"C":7,"D":7,"E":7,"F":7,"G":7,"H":7,
+              "I":7,"J":7,"K":7,"L":7,"M":7,"N":10,"O":10,"P":12}
+for col, w in col_widths.items():
+    ws.column_dimensions[col].width = w
+
+ws.freeze_panes = "A11"
+ws.page_setup.orientation = "landscape"
+ws.page_setup.paperSize = 9
+ws.page_setup.fitToPage = True
+ws.page_setup.fitToWidth = 1
+
+# ══════════════════════════════════════════════
+# Sheet 2: 月度计划汇总
+# ══════════════════════════════════════════════
+ws2 = wb.create_sheet("月度计划汇总")
+
+ws2.merge_cells("A1:N1")
+ws2["A1"] = "月度生产计划汇总表"
+ws2["A1"].font = Font(name="微软雅黑", bold=True, size=14, color=WHITE)
+ws2["A1"].fill = fill(DARK_BLUE); ws2["A1"].alignment = center()
+ws2.row_dimensions[1].height = 34
+
+ws2.merge_cells("A2:N2")
+ws2["A2"] = "年份：______    月份：______    填表人：______    审批：______"
+ws2["A2"].font = Font(name="微软雅黑", size=9, color=DARK_GRAY)
+ws2["A2"].fill = fill(LIGHT_BLUE); ws2["A2"].alignment = center()
+ws2.row_dimensions[2].height = 20
+
+hdrs2 = ["款号","颜色","订单数","计划产量","第一周","第二周","第三周","第四周",
+         "月累计","完成率","交货期","客户","状态","备注"]
+for i, h in enumerate(hdrs2, 1):
+    col = get_column_letter(i)
+    ws2[f"{col}3"].value = h
+    ws2[f"{col}3"].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+    ws2[f"{col}3"].fill = fill(MID_BLUE if i%2==1 else DARK_BLUE)
+    ws2[f"{col}3"].alignment = center(wrap=True); ws2[f"{col}3"].border = border()
+ws2.row_dimensions[3].height = 26
+
+for r in range(4, 24):
+    rf = fill(WHITE) if r%2==0 else fill(GRAY)
+    for ci in range(1, 15):
+        col = get_column_letter(ci)
+        ws2[f"{col}{r}"].fill = rf; ws2[f"{col}{r}"].border = border()
+        ws2[f"{col}{r}"].alignment = center()
+    ws2[f"I{r}"] = f"=SUM(E{r}:H{r})"
+    ws2[f"I{r}"].fill = fill(LIGHT_ORANGE); ws2[f"I{r}"].border = border(); ws2[f"I{r}"].alignment = center()
+    ws2[f"J{r}"] = f'=IF(D{r}=0,"",I{r}/D{r})'
+    ws2[f"J{r}"].number_format = "0.0%"
+    ws2[f"J{r}"].fill = fill(LIGHT_GREEN); ws2[f"J{r}"].border = border(); ws2[f"J{r}"].alignment = center()
+    ws2.row_dimensions[r].height = 20
+
+ws2["A24"] = "合  计"
+ws2["A24"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+ws2["A24"].fill = fill(DARK_BLUE); ws2["A24"].border = thick_border(); ws2["A24"].alignment = center()
+for ci in [3,4,5,6,7,8,9]:
+    col = get_column_letter(ci)
+    ws2[f"{col}24"] = f"=SUM({col}4:{col}23)"
+    ws2[f"{col}24"].font = Font(name="微软雅黑", bold=True, color=WHITE)
+    ws2[f"{col}24"].fill = fill(MID_BLUE); ws2[f"{col}24"].border = thick_border(); ws2[f"{col}24"].alignment = center()
+ws2.row_dimensions[24].height = 26
+
+col2w = {"A":10,"B":10,"C":9,"D":9,"E":8,"F":8,"G":8,"H":8,"I":9,"J":8,"K":11,"L":12,"M":8,"N":12}
+for col, w in col2w.items():
+    ws2.column_dimensions[col].width = w
+ws2.page_setup.orientation = "landscape"
+ws2.page_setup.paperSize = 9
+
+# ══════════════════════════════════════════════
+# Sheet 3: 每日产量跟踪
+# ══════════════════════════════════════════════
+ws3 = wb.create_sheet("每日产量跟踪")
+
+ws3.merge_cells("A1:M1")
+ws3["A1"] = "每日产量跟踪表"
+ws3["A1"].font = Font(name="微软雅黑", bold=True, size=14, color=WHITE)
+ws3["A1"].fill = fill(DARK_BLUE); ws3["A1"].alignment = center()
+ws3.row_dimensions[1].height = 34
+
+ws3.merge_cells("A2:M2")
+ws3["A2"] = "款号：______    月份：______    目标日产量：______双"
+ws3["A2"].font = Font(name="微软雅黑", size=9, color=DARK_GRAY)
+ws3["A2"].fill = fill(LIGHT_BLUE); ws3["A2"].alignment = center()
+ws3.row_dimensions[2].height = 20
+
+hdrs3 = ["日期","星期","计划产量","实际产量","达成率","裁剪","缝合","贴底","检验","包装","不良品数","不良率","备注"]
+for i, h in enumerate(hdrs3, 1):
+    col = get_column_letter(i)
+    ws3[f"{col}3"].value = h
+    ws3[f"{col}3"].font = Font(name="微软雅黑", bold=True, size=9, color=WHITE)
+    ws3[f"{col}3"].fill = fill(DARK_BLUE if i in [1,5,11,12] else MID_BLUE)
+    ws3[f"{col}3"].alignment = center(wrap=True); ws3[f"{col}3"].border = border()
+ws3.row_dimensions[3].height = 26
+
+weekdays = ["星期一","星期二","星期三","星期四","星期五","星期六","—","星期一","星期二","星期三","星期四","星期五","星期六","—",
+            "星期一","星期二","星期三","星期四","星期五","星期六","—","星期一","星期二","星期三","星期四","星期五","星期六","—"]
+for r in range(4, 35):
+    rf = fill(GRAY) if (r-4) % 7 == 6 else (fill(WHITE) if r%2==0 else fill(LIGHT_BLUE))
+    for ci in range(1, 14):
+        col = get_column_letter(ci)
+        ws3[f"{col}{r}"].fill = rf; ws3[f"{col}{r}"].border = border()
+        ws3[f"{col}{r}"].alignment = center()
+    if r-4 < len(weekdays):
+        ws3[f"B{r}"].value = weekdays[r-4]
+        ws3[f"B{r}"].font = Font(name="微软雅黑", size=8)
+    ws3[f"E{r}"] = f'=IF(C{r}=0,"",D{r}/C{r})'
+    ws3[f"E{r}"].number_format = "0.0%"
+    ws3[f"E{r}"].fill = fill(LIGHT_ORANGE); ws3[f"E{r}"].border = border(); ws3[f"E{r}"].alignment = center()
+    ws3[f"L{r}"] = f'=IF(D{r}=0,"",K{r}/D{r})'
+    ws3[f"L{r}"].number_format = "0.0%"
+    ws3[f"L{r}"].fill = fill(LIGHT_GREEN); ws3[f"L{r}"].border = border(); ws3[f"L{r}"].alignment = center()
+    ws3.row_dimensions[r].height = 18
+
+ws3["A35"] = "月度合计"
+ws3["A35"].font = Font(name="微软雅黑", bold=True, size=10, color=WHITE)
+ws3["A35"].fill = fill(DARK_BLUE); ws3["A35"].border = thick_border(); ws3["A35"].alignment = center()
+for ci in [3,4,6,7,8,9,10,11]:
+    col = get_column_letter(ci)
+    ws3[f"{col}35"] = f"=SUM({col}4:{col}34)"
+    ws3[f"{col}35"].font = Font(name="微软雅黑", bold=True, color=WHITE)
+    ws3[f"{col}35"].fill = fill(MID_BLUE); ws3[f"{col}35"].border = thick_border(); ws3[f"{col}35"].alignment = center()
+ws3[f"E35"] = f'=IF(C35=0,"",D35/C35)'
+ws3[f"E35"].number_format = "0.0%"
+ws3[f"E35"].font = Font(name="微软雅黑", bold=True, color=WHITE)
+ws3[f"E35"].fill = fill(ORANGE); ws3[f"E35"].border = thick_border(); ws3[f"E35"].alignment = center()
+ws3.row_dimensions[35].height = 26
+
+col3w = {"A":10,"B":8,"C":9,"D":9,"E":8,"F":8,"G":8,"H":8,"I":8,"J":8,"K":9,"L":8,"M":12}
+for col, w in col3w.items():
+    ws3.column_dimensions[col].width = w
+ws3.page_setup.orientation = "landscape"
+ws3.page_setup.paperSize = 9
+ws3.freeze_panes = "A4"
+
+out = "/mnt/user-data/outputs/拖鞋生产计划单.xlsx"
+wb.save(out)
+print("保存成功:", out)
+EOF
+python3 /home/claude/production_plan_cn.py
+Keluaran
+保存成功: /mnt/user-data/outputs/拖鞋生产计划单.xlsx
